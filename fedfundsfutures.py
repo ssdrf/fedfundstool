@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# This Python script was annotated by an AI.
-# It fetches data from the FRED API and Yahoo Finance, organizes the data, and visualizes it using Plotly.
-
 import os
 import pandas as pd
 import numpy as np
