@@ -170,14 +170,14 @@ fig.add_trace(
 
 
 # Calculate the difference between the last points
-difference = forward.values[-1] - forward_week_ago.values[-1]
+difference = (forward.values[-1] - forward_week_ago.values[-1])*100
 
 # Add the difference value as an annotation
 annotation_trace = go.Scatter(
     x=[forward.index[-1]],
     y=[(forward.values[-1] + forward_week_ago.values[-1]) / 2],
     mode='text',
-    text=[f'difference last week: {difference:.2f}'],
+    text=[f'difference last week: {difference:.2f} bps'],
     textposition='middle left',
     textfont=dict(size=12),
     showlegend=False,
