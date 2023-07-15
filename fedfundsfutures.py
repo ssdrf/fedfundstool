@@ -185,14 +185,13 @@ annotation_trace = go.Scatter(
     textfont=dict(size=12),
     showlegend=False,
     hoverinfo='none',
-    visible=True  # Set initial visibility to True
+    visible=True  
 )
 
 # Add the annotation trace to the figure
 fig.add_trace(annotation_trace)
 
 # Create two lists that hold the visibility status of each trace
-# One for when the annotation is visible and one for when it is hidden
 trace_visibility = ['legendonly'] * len(df['Ticker'].unique()) + [True]*(len(fig.data) - len(df['Ticker'].unique()) - 1) + [True, False]
 
 
@@ -202,9 +201,9 @@ fig.update_layout(
             type="buttons",
             direction="left",
             active=0,
-            x=1.0,  # far right
-            y=1.12,  # slightly above the top border to make it look smaller
-            pad={"r": 10, "t": 10},  # Adjust padding to make the button look smaller
+            x=1.0,  
+            y=1.12,  
+            pad={"r": 10, "t": 10},  
             showactive=False,
             buttons=list([
                 dict(label="hide difference",
