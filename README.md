@@ -1,6 +1,6 @@
 # Federal Funds Futures Visualization Tool
 
-This project fetches data from the FRED API and Yahoo Finance, organizes that data, and visualizes it using a plotly graph.
+This project fetches data from the FRED API and Yahoo Finance, organizes that data, and visualizes it.
 
 ## Setup
 
