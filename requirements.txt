@@ -1,0 +1,8 @@
+pandas
+numpy
+yfinance
+fredapi
+datetime
+dateutil
+os
+plotly
