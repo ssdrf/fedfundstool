@@ -103,14 +103,17 @@ for i, ticker in enumerate(tickers):
 forward = pd.Series(data=forward)
 forward_week_ago = pd.Series(data=forward_week_ago)
 
-# Create a line chart using Plotly with adjusted close price over time for each ticker
-fig = px.line(df, x=df.index, y='Adj Close', color='Ticker',
-              labels={'x':'Time', 'Adj Close':'Rate'})
-fig.update_traces(line=dict(width=0.75))
+# Create Figure
+fig = go.Figure()
 
-# Make all traces invisible by default, only visible when selected in the legend
-for trace in fig.data:
-    trace.visible = 'legendonly'
+for ticker in df['Ticker'].unique()[::-1]:
+    fig.add_trace(go.Scatter(x=df[df['Ticker'] == ticker].index,
+                             y=df[df['Ticker'] == ticker]['Adj Close'],
+                             name=ticker,
+                             visible='legendonly',
+                             showlegend=True))
+
+
 
 # Update layout settings
 fig.update_layout(template='plotly_dark');
@@ -121,14 +124,102 @@ fig.update_yaxes(showline=True, linewidth=1, linecolor='white', mirror=True,tick
 fig.update_layout(scene = dict(xaxis_title='Year', yaxis_title='Rate'));
 
 # Add traces for other market instruments and implied term structure to the figure
-fig.add_trace(go.Scatter(x = rrp.index, y = rrp.values, name = 'O/N RRP', opacity=1, line = dict(color='#075E45', width=2, dash='dash')));
-fig.add_trace(go.Scatter(x = ioer_full.index, y = ioer_full.values, name = 'IOER',opacity=1, line = dict(color='#75160C', width=2, dash='dash')));
-fig.add_trace(go.Scatter(x = sofr.index, y = sofr.values, name = 'SOFR', line = dict(color='darkgreen', width=2),opacity = .5));
-fig.add_trace(go.Scatter(x = eff.index, y = eff.values, name = 'EFF', line = dict(color='White', width=2),opacity = .8));
-fig.add_trace(go.Scatter(x = dot.index, y = dot.values, name = 'FOMC Dots Median', line = dict(color='#ffcc00', width=2, dash = 'dash'),opacity = .8, mode = 'lines+markers',marker_symbol='cross',marker=dict(size=6, color = '#ffcc00')));
-fig.add_trace(go.Scatter(x = forward.index, y = forward.values, name = 'Implied TS t-0', line = dict(color='red', width=2),opacity = .5, mode='lines+markers'));
-fig.add_trace(go.Scatter(x = forward_week_ago.index, y = forward_week_ago.values, name = 'Implied TS t-7', line = dict(color='gray', width=2),opacity = .5, mode='lines+markers'));
+fig.add_trace(go.Scatter(x=rrp.index, y=rrp.values, name='O/N RRP', opacity=1, line=dict(color='#075E45', width=2, dash='dash')))
+fig.add_trace(go.Scatter(x=ioer_full.index, y=ioer_full.values, name='IOER', opacity=1, line=dict(color='#75160C', width=2, dash='dash')))
+fig.add_trace(go.Scatter(x=sofr.index, y=sofr.values, name='SOFR', line=dict(color='darkgreen', width=2), opacity=.5))
+fig.add_trace(go.Scatter(x=eff.index, y=eff.values, name='EFF', line=dict(color='White', width=2), opacity=.8))
+fig.add_trace(go.Scatter(x=dot.index, y=dot.values, name='FOMC Dots Median', line=dict(color='#ffcc00', width=2, dash='dash'), opacity=.8, mode='lines+markers', marker_symbol='cross', marker=dict(size=6, color='#ffcc00')))
 
-# Show the plot
+fig.add_trace(go.Scatter(x=forward.index, y=forward.values, name='Implied TS t-0', line=dict(color='red', width=2), opacity=.5, mode='lines+markers'))
+fig.add_trace(go.Scatter(x=forward_week_ago.index, y=forward_week_ago.values, name='Implied TS t-7', fill='tonexty', line=dict(color='gray', width=2), opacity=.5, mode='lines+markers'))
+
+
+# Adding the bracket traces
+x_start = forward_week_ago.index[-1]
+x_end = forward.index[-1]
+y_start = min(forward_week_ago.values[-1], forward.values[-1])
+y_end = max(forward_week_ago.values[-1], forward.values[-1])
+
+# Horizontal lines
+fig.add_trace(
+    go.Scatter(
+        x=[x_start, x_end],
+        y=[y_start, y_start],
+        mode="lines",
+        line=dict(color="lightgray", width=1),
+        showlegend=False
+    )
+)
+fig.add_trace(
+    go.Scatter(
+        x=[x_start, x_end],
+        y=[y_end, y_end],
+        mode="lines",
+        line=dict(color="lightgray", width=1),
+        showlegend=False
+    )
+)
+
+# Vertical line
+fig.add_trace(
+    go.Scatter(
+        x=[x_end, x_end],
+        y=[y_start, y_end],
+        mode="lines",
+        line=dict(color="lightgray", width=1),
+        showlegend=False
+    )
+)
+
+
+# Calculate the difference between the last points
+difference = forward.values[-1] - forward_week_ago.values[-1]
+
+# Add the difference value as an annotation
+annotation_trace = go.Scatter(
+    x=[forward.index[-1]],
+    y=[(forward.values[-1] + forward_week_ago.values[-1]) / 2],
+    mode='text',
+    text=[f'difference last week: {difference:.2f}'],
+    textposition='middle left',
+    textfont=dict(size=12),
+    showlegend=False,
+    hoverinfo='none',
+    visible=True  # Set initial visibility to True
+)
+
+# Add the annotation trace to the figure
+fig.add_trace(annotation_trace)
+
+# Create two lists that hold the visibility status of each trace
+# One for when the annotation is visible and one for when it is hidden
+trace_visibility = ['legendonly'] * len(df['Ticker'].unique()) + [True]*(len(fig.data) - len(df['Ticker'].unique()) - 1) + [True, False]
+
+
+fig.update_layout(
+    updatemenus=[
+        dict(
+            type="buttons",
+            direction="left",
+            active=0,
+            x=1.0,  # far right
+            y=1.12,  # slightly above the top border to make it look smaller
+            pad={"r": 10, "t": 10},  # Adjust padding to make the button look smaller
+            showactive=False,
+            buttons=list([
+                dict(label="hide difference",
+                     method="update",
+                     args=[{"visible": trace_visibility[:-4] + [False, False, False, False, False]},  # Hide the last five traces (annotation and bracket)
+                           ]),
+                dict(label="show difference ",
+                     method="update",
+                     args=[{"visible": trace_visibility[:-4] + [True, True, True, True, True]},  # Show all traces including the annotation and the bracket
+                           ]),
+            ])
+        )]
+)
+
+
 fig.show()
+
 
