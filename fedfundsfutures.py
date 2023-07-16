@@ -36,13 +36,22 @@ dot = fred.get_series('FEDTARMD').tail(365*2)
 sofr = fred.get_series('SOFR')
 sofr = sofr.fillna(method = 'pad').tail(365*2)  # Fill any missing data using previous value
 
-# Get current and next year (in two digit format)
+# Get current month and year
+current_month = datetime.now().month
 current_year = datetime.now().year % 100
-next_year = (current_year + 1) % 100
 
-# Prepare ticker symbols for next 24 months using months' futures contract symbols and current & next years
-months = ['F', 'G', 'H', 'J', 'K', 'M', 'N', 'Q', 'U', 'V', 'X', 'Z']
-tickers = [f'ZQ{x}{year}.CBT' for year in [current_year, next_year] for x in months]
+# Determine the relevant months for this year
+relevant_months_this_year = months[current_month - 1:]
+
+# Prepare ticker symbols for the relevant months of this year using the futures contract symbols
+tickers_this_year = [f'ZQ{x}{current_year}.CBT' for x in relevant_months_this_year]
+
+# Prepare ticker symbols for all months of next year using the futures contract symbols
+tickers_next_year = [f'ZQ{x}{current_year + 1}.CBT' for x in months]
+
+# Combine the tickers for this year and next year
+tickers = tickers_this_year + tickers_next_year
+
 
 # Function to download ticker data using Yahoo Finance API
 def download_data(ticker):
@@ -83,7 +92,7 @@ def get_last_close_price(ticker_data, days_ago=1):
 # Get last week's and today's implied term structure for each contract
 forward = {}
 forward_week_ago = {}
-start_month = 2
+start_month = datetime.now().month +1
 start_year = current_year
 
 for i, ticker in enumerate(tickers):
@@ -100,7 +109,9 @@ for i, ticker in enumerate(tickers):
 forward = pd.Series(data=forward)
 forward_week_ago = pd.Series(data=forward_week_ago)
 
-# Create Figure
+
+
+# Create an initial empty figure
 fig = go.Figure()
 
 for ticker in df['Ticker'].unique()[::-1]:
@@ -109,6 +120,8 @@ for ticker in df['Ticker'].unique()[::-1]:
                              name=ticker,
                              visible='legendonly',
                              showlegend=True))
+
+
 
 
 
@@ -129,6 +142,7 @@ fig.add_trace(go.Scatter(x=dot.index, y=dot.values, name='FOMC Dots Median', lin
 
 fig.add_trace(go.Scatter(x=forward.index, y=forward.values, name='Implied TS t-0', line=dict(color='red', width=2), opacity=.5, mode='lines+markers'))
 fig.add_trace(go.Scatter(x=forward_week_ago.index, y=forward_week_ago.values, name='Implied TS t-7', fill='tonexty', line=dict(color='gray', width=2), opacity=.5, mode='lines+markers'))
+
 
 
 # Adding the bracket traces
@@ -182,13 +196,14 @@ annotation_trace = go.Scatter(
     textfont=dict(size=12),
     showlegend=False,
     hoverinfo='none',
-    visible=True  
+    visible=True  # Set initial visibility to True
 )
 
 # Add the annotation trace to the figure
 fig.add_trace(annotation_trace)
 
 # Create two lists that hold the visibility status of each trace
+# One for when the annotation is visible and one for when it is hidden
 trace_visibility = ['legendonly'] * len(df['Ticker'].unique()) + [True]*(len(fig.data) - len(df['Ticker'].unique()) - 1) + [True, False]
 
 
@@ -198,9 +213,9 @@ fig.update_layout(
             type="buttons",
             direction="left",
             active=0,
-            x=1.0,  
-            y=1.12,  
-            pad={"r": 10, "t": 10},  
+            x=1.12,  # far right
+            y=1.12,  # slightly above the top border to make it look smaller
+            pad={"r": 10, "t": 10},  # Adjust padding to make the button look smaller
             showactive=False,
             buttons=list([
                 dict(label="hide difference",
@@ -214,8 +229,4 @@ fig.update_layout(
             ])
         )]
 )
-
-
 fig.show()
-
-
