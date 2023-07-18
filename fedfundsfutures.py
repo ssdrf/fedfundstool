@@ -32,7 +32,7 @@ eff = fred.get_series('DFF').tail(365*2)
 eff_hist = fred.get_series('FEDFUNDS').tail(365*2)
 sp = fred.get_series('SP500').tail(365*2)
 dwr = fred.get_series('DPCREDIT').tail(365*2)
-dot = fred.get_series('FEDTARMD').tail(365*2)
+dot = fred.get_series('FEDTARMD').tail(3)
 sofr = fred.get_series('SOFR')
 sofr = sofr.fillna(method = 'pad').tail(365*2)  # Fill any missing data using previous value
 
