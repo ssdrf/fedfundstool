@@ -36,6 +36,9 @@ dot = fred.get_series('FEDTARMD').tail(365*2)
 sofr = fred.get_series('SOFR')
 sofr = sofr.fillna(method = 'pad').tail(365*2)  # Fill any missing data using previous value
 
+
+months = ['F', 'G', 'H', 'J', 'K', 'M', 'N', 'Q', 'U', 'V', 'X', 'Z']
+
 # Get current month and year
 current_month = datetime.now().month
 current_year = datetime.now().year % 100
